@@ -163,7 +163,6 @@ error: none | <error description>
 ```
 === END MANDATORY OUTPUT FORMAT ==='
 
-
 # ─── hook-update ──────────────────────────────────────────────────────────────
 
 do_hook_update() {
@@ -271,7 +270,7 @@ do_dispatch() {
   ensure_state_dir
   [[ -z "$output_file" ]] && { mkdir -p /tmp/codex-loop; output_file="/tmp/codex-loop/$(date +%Y%m%dT%H%M%S)-$$.md"; }
 
-  local -a args=(exec -C "$WORKSPACE" -o "$output_file")
+  local -a args=(exec -C "$WORKSPACE" -o "$output_file" --json)
   [[ "$read_only" == "1" ]] && args+=(--sandbox read-only) || args+=("$CODEX_FLAGS")
   [[ -n "$model" ]] && args+=(--model "$model")
 
@@ -483,7 +482,7 @@ $(cat "$pf")
     local tmp; tmp=$(mktemp -t "ralph-r${round}-${aid}.XXXXXX")
     build_prompt "$combined" "" "0" > "$tmp" 2>/dev/null || { rm -f "$tmp"; continue; }
 
-    local -a ca=(exec -C "$WORKSPACE" -o "$of" "$CODEX_FLAGS")
+    local -a ca=(exec -C "$WORKSPACE" -o "$of" --json "$CODEX_FLAGS")
     [[ -n "$model" ]] && ca+=(--model "$model")
     # Scope isolation: restrict writes to story's directory
     local wr; wr=$(extract_write_root "$pf")

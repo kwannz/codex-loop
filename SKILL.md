@@ -36,16 +36,14 @@ for story in stories:
     # Opus 写精准 prompt（Context + Requirement + Plan + Constraints）
     Write(f"state/outputs/story-{story.id}.md", build_precise_prompt(story, source))
 
-# ── Phase 2: -ralph 自动循环 ──
-# 脚本接管: 并行 dispatch → verify → feedback → retry
-Bash(f"{skill_dir}/scripts/codex-loop.sh -ralph -auto-max 10",
-     run_in_background=True)
-# 循环内 Codex 是纯执行者 — 按 Opus 的 plan 精确实现
-# 失败时脚本自动生成富 feedback（agent 结果 + 完整错误 + diff stat）
-# Codex 下轮读 feedback 按修正方向重做
+# ── Phase 2: -ralph 后台运行 ──
+# Background task — Opus 不阻塞，可继续规划下一批 story
+task = Bash(f"{skill_dir}/scripts/codex-loop.sh -ralph -auto-max 10",
+            run_in_background=True)
+# 脚本内: 并行 dispatch → verify → feedback → retry → 成功 return 0 / 失败 return 4
 
-# ── Phase 3: Opus 审核结果 ──
-# -ralph 返回后，Opus 读 outputs, 验证, 决定下一步
+# ── Phase 3: 等待结果 + Opus 审核 ──
+TaskOutput(task, block=True, timeout=600000)  # 完成后自动返回输出
 Bash("cat state/outputs/*-output.md")
 Bash("cargo check --workspace && cargo test --workspace")
 # 如果需要新方向 → 回到 Phase 0 重新探索
